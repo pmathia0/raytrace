@@ -2,7 +2,7 @@ extern crate math;
 use math::vector::{ Vec3, Normalize };
 
 use std::fs;
-use raytrace::{ray::*, sphere::{Sphere, HitableList}};
+use raytrace::{ray::*, sphere::{Sphere, HitableList}, camera::Camera};
 
 fn color(r: &Ray, world: &dyn Hitable) -> Vec3<f32> {
     let mut rec = HitRecord::default();
@@ -18,8 +18,8 @@ fn color(r: &Ray, world: &dyn Hitable) -> Vec3<f32> {
 fn main() {
     println!("Hello, world!");
 
-    let nx = 1800u32;
-    let ny = 900u32;
+    let nx = 200u32;
+    let ny = 100u32;
 
     let mut data = String::new();
     data.push_str("P3\n");
@@ -30,10 +30,7 @@ fn main() {
     data.push_str(255.to_string().as_str());
     data.push_str("\n");
 
-    let lower_left_corner = Vec3::<f32>::new(-2.0,-1.0,-1.0);
-    let horizontal = Vec3::<f32>::new(4.0,0.0,0.0);
-    let vertical = Vec3::<f32>::new(0.0,2.0,0.0);
-    let origin = Vec3::<f32>::zero();
+    let camera = Camera::new();
 
     let objects: Vec<Box<dyn Hitable>> = vec![
         Box::new(Sphere::new(Vec3::<f32>::new(0.0,0.0,-1.0), 0.5)),
@@ -45,7 +42,7 @@ fn main() {
         for i in 0..nx {
             let u = i as f32 / nx as f32;
             let v = j as f32 / ny as f32;
-            let r = Ray::new(origin, lower_left_corner + horizontal*u + vertical*v);
+            let r = camera.get_ray(u, v);
             let col = color(&r, &list);
             let ir = (255.99*col.x) as u8;
             let ig = (255.99*col.y) as u8;
