@@ -18,9 +18,9 @@ impl Hitable for Sphere {
     fn hit(&self, r: &crate::ray::Ray, t_min: f32, t_max: f32, hit_record: &mut crate::ray::HitRecord) -> bool {
         let oc = r.origin() - self.center;
         let a = r.direction().dot(r.direction());
-        let b = oc.dot(r.direction()) * 2.0;
+        let b = oc.dot(r.direction());
         let c = oc.dot(oc) - self.radius*self.radius;
-        let discriminant = b*b - 4.0*a*c;
+        let discriminant = b*b - a*c;
         if discriminant > 0.0 {
             let temp = (-b - discriminant.sqrt()) / a;
             if temp < t_max && temp > t_min {
