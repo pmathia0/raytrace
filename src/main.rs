@@ -1,10 +1,13 @@
+extern crate math;
+use math::vector::Vec3;
+
 use std::fs;
 
 fn main() {
     println!("Hello, world!");
 
-    let nx = 600u32;
-    let ny = 500u32;
+    let nx = 200u32;
+    let ny = 100u32;
 
     let mut data = String::new();
     data.push_str("P3\n");
@@ -17,12 +20,10 @@ fn main() {
 
     for j in (0..(ny)).rev() {
         for i in 0..nx {
-            let r = i as f32 / nx as f32;
-            let g = j as f32 / ny as f32;
-            let b = 0.2f32;
-            let ir = (255.99*r) as u8;
-            let ig = (255.99*g) as u8;
-            let ib = (255.99*b) as u8;
+            let col = Vec3::<f32>::new(i as f32 / nx as f32, j as f32 / ny as f32, 0.2f32);
+            let ir = (255.99*col.x) as u8;
+            let ig = (255.99*col.y) as u8;
+            let ib = (255.99*col.z) as u8;
             data.push_str(ir.to_string().as_str());
             data.push_str(" ");
             data.push_str(ig.to_string().as_str());
