@@ -5,16 +5,28 @@ use std::fs;
 use raytrace::ray::Ray;
 
 fn color(r: &Ray) -> Vec3<f32> {
+    if hit_sphere(Vec3::<f32>::new(0.0,0.0,-1.0), 0.5, r) {
+        return Vec3::<f32>::new(1.0, 0.0, 0.0)
+    }
     let unit_direction: Vec3<f32> = r.direction().normalize();
     let t: f32 = 0.5 * (unit_direction.y + 1.0);
     Vec3::<f32>::new(1.0,1.0,1.0) * (1.0-t) + Vec3::<f32>::new(0.5,0.7,1.0) * t
 }
 
+fn hit_sphere(center: Vec3<f32>, radius: f32, r: &Ray) -> bool {
+    let oc = r.origin() - center;
+    let a = r.direction().dot(r.direction());
+    let b = oc.dot(r.direction()) * 2.0;
+    let c = oc.dot(oc) - radius*radius;
+    let discriminant = b*b - 4.0*a*c;
+    discriminant > 0.0
+}
+
 fn main() {
     println!("Hello, world!");
 
-    let nx = 200u32;
-    let ny = 100u32;
+    let nx = 600u32;
+    let ny = 300u32;
 
     let mut data = String::new();
     data.push_str("P3\n");
