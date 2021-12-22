@@ -1,12 +1,19 @@
 extern crate math;
 extern crate rand;
+extern crate ktx2;
 
+use ktx2::texture::TextureKtx2;
+use ktx2::vk_format::VkFormat;
 use math::vector::{ Vec3, Normalize };
 
-use std::fs;
 use rand::distributions::{Distribution, Uniform};
-
 use raytrace::{ray::*, sphere::{Sphere, HitableList}, camera::Camera};
+
+const NX: u32 = 1800;
+const NY: u32 =  900;
+const NS: u32 =  10000;
+const RAND_MAX: u32 = 100000;
+
 fn color(r: &Ray, world: &dyn Hitable) -> Vec3<f32> {
     let mut rec = HitRecord::default();
     if world.hit(r, 0.0, f32::MAX, &mut rec) {
@@ -19,20 +26,7 @@ fn color(r: &Ray, world: &dyn Hitable) -> Vec3<f32> {
 }
 
 fn main() {
-    println!("Hello, world!");
-
-    let nx = 800u32;
-    let ny = 400u32;
-    let ns = 100u32;
-
-    let mut data = String::new();
-    data.push_str("P3\n");
-    data.push_str(nx.to_string().as_str());
-    data.push_str(" ");
-    data.push_str(ny.to_string().as_str());
-    data.push_str("\n");
-    data.push_str(255.to_string().as_str());
-    data.push_str("\n");
+    println!("Traycing the rays...");
 
     let camera = Camera::new();
 
@@ -43,28 +37,25 @@ fn main() {
     let list = HitableList::new(objects);
 
     let mut rng = rand::thread_rng();
-    let die = Uniform::from(0..1000);
+    let die = Uniform::from(0..RAND_MAX);
     
-    for j in (0..(ny)).rev() {
-        for i in 0..nx {
+    let mut tex: TextureKtx2 = TextureKtx2::new(NX, NY, VkFormat::R8G8B8A8_UNORM);
+    for j in 0..NY {
+        for i in 0..NX {
+            println!("Processing row {}", j);
             let mut col = Vec3::<f32>::zero();
-            for _s in 0..ns {
-                let u = (i as f32 + die.sample(&mut rng) as f32 / 1000.0) / nx as f32;
-                let v = (j as f32 + die.sample(&mut rng) as f32 / 1000.0) / ny as f32;
+            for _s in 0..NS {
+                let u = (i as f32 + die.sample(&mut rng) as f32 / RAND_MAX as f32) / NX as f32;
+                let v = (j as f32 + die.sample(&mut rng) as f32 / RAND_MAX as f32) / NY as f32;
                 let r = camera.get_ray(u, v);
                 col = col + color(&r, &list);
             }
-            col = col / ns as f32;
-            let ir = (255.99*col.x) as u8;
-            let ig = (255.99*col.y) as u8;
-            let ib = (255.99*col.z) as u8;
-            data.push_str(ir.to_string().as_str());
-            data.push_str(" ");
-            data.push_str(ig.to_string().as_str());
-            data.push_str(" ");
-            data.push_str(ib.to_string().as_str());
-            data.push_str("\n");
+            col = col / NS as f32;
+            let ir = (256.0*col.x) as u8;
+            let ig = (256.0*col.y) as u8;
+            let ib = (256.0*col.z) as u8;
+            tex.write_pixel(i, NY-1-j, &[ir,ig,ib,255]);
         }
     }
-    fs::write("output.ppm", data).unwrap();
+    tex.write_to_ktx2("output.ktx2").unwrap();
 }

@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 math = { path="../math" }
+ktx2 = { path="../ktx2" }
 rand = "0.8.4"
