@@ -15,21 +15,31 @@ pub fn random_f32() -> f32 {
     die.sample(&mut rng) as f32 / MAX_RAND as f32
 }
 
-pub fn vec3_random() -> Vec3<f32> {
+pub fn random_f32_with_range(min: f32, max: f32) -> f32 {
     let mut rng = rand::thread_rng();
-    let die = Uniform::from(0..MAX_RAND);
-    Vec3::<f32>::new(die.sample(&mut rng) as f32 / MAX_RAND as f32,die.sample(&mut rng) as f32 / MAX_RAND as f32,die.sample(&mut rng) as f32 / MAX_RAND as f32)
+    let die = Uniform::from((min*MAX_RAND as f32).floor()..(max*MAX_RAND as f32).floor());
+    die.sample(&mut rng) as f32 / MAX_RAND as f32
+}
+
+pub fn vec3_random() -> Vec3<f32> {
+    Vec3::<f32>::new(random_f32(),random_f32(),random_f32())
 }
 
 pub fn vec3_random_with_range(min: f32, max: f32) -> Vec3<f32> {
-    let mut rng = rand::thread_rng();
-    let die = Uniform::from((min*MAX_RAND as f32).floor()..(max*MAX_RAND as f32).floor());
-    Vec3::<f32>::new(die.sample(&mut rng) as f32 / MAX_RAND as f32,die.sample(&mut rng) as f32 / MAX_RAND as f32,die.sample(&mut rng) as f32 / MAX_RAND as f32)
+    Vec3::<f32>::new(random_f32_with_range(min, max),random_f32_with_range(min, max),random_f32_with_range(min, max))
 }
 
 pub fn vec3_random_in_unit_sphere() -> Vec3<f32> {
     loop {
         let p = vec3_random_with_range(-1f32,1f32);
+        if p.length() * p.length() >= 1.0 { continue; }
+        return p;
+    }
+}
+
+pub fn vec3_random_in_unit_disk() -> Vec3<f32> {
+    loop {
+        let p = Vec3::<f32>::new(random_f32_with_range(-1f32,1f32), random_f32_with_range(-1f32,1f32), 0.0);
         if p.length() * p.length() >= 1.0 { continue; }
         return p;
     }

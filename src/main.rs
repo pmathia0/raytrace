@@ -6,14 +6,14 @@ use std::rc::Rc;
 
 use ktx2::texture::TextureKtx2;
 use ktx2::vk_format::VkFormat;
-use math::vector::{ Vec3, Normalize };
+use math::vector::{ Vec3, Normalize, Length };
 
 use rand::distributions::{Distribution, Uniform};
 use raytrace::{ray::*, sphere::Sphere, camera::Camera, hit::{Hitable, HitableList}, material::{Lambertian, Material, Metal, Dielectric}};
 
-const NX: u32 = 200;
-const NY: u32 = 100;
-const NS: u32 = 10;
+const NX: u32 = 800;
+const NY: u32 = 400;
+const NS: u32 = 200;
 const MAX_DEPTH: i32 = 50;
 const RAND_MAX: u32 = 100000;
 
@@ -69,12 +69,16 @@ fn main() {
     println!("Traycing the rays...");
 
     // Camera
+    let lookfrom = Vec3::<f32>::new(3.0,3.0,2.0); 
+    let lookat = Vec3::<f32>::new(0.0,0.0,-1.0);
     let camera = Camera::new(
-        Vec3::<f32>::new(-2.0,2.0,1.0), 
-        Vec3::<f32>::new(0.0,0.0,-1.0), 
+        lookfrom, 
+        lookat,
         Vec3::<f32>::new(0.0,1.0,0.0), 
         20.0, 
-        NX as f32 / NY as f32);
+        NX as f32 / NY as f32,
+        2.0,
+        (lookfrom-lookat).length());
 
     // World
     let material_ground: Rc<Box<dyn Material>> = Rc::new(Box::new(Lambertian::new(Vec3::<f32>::new(0.8,0.8,0.0))));
