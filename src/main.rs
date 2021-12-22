@@ -7,17 +7,24 @@ use ktx2::vk_format::VkFormat;
 use math::vector::{ Vec3, Normalize };
 
 use rand::distributions::{Distribution, Uniform};
-use raytrace::{ray::*, sphere::{Sphere, HitableList}, camera::Camera};
+use raytrace::{ray::*, sphere::{Sphere, HitableList}, camera::Camera, vec3_random_in_unit_sphere, vec3_random_unit};
 
-const NX: u32 = 200;
-const NY: u32 = 100;
-const NS: u32 = 10;
+const NX: u32 = 600;
+const NY: u32 = 400;
+const NS: u32 = 100;
+const MAX_DEPTH: i32 = 50;
 const RAND_MAX: u32 = 100000;
 
-fn ray_color(r: &Ray, world: &dyn Hitable) -> Vec3<f32> {
+fn ray_color(r: &Ray, world: &dyn Hitable, depth: i32) -> Vec3<f32> {
     let mut rec = HitRecord::default();
-    if world.hit(r, 0.0, f32::MAX, &mut rec) {
-        return Vec3::<f32>::new(rec.normal.x+1.0,rec.normal.y+1.0,rec.normal.z+1.0)*0.5;
+
+    // If we've exceeded the ray bounce limit, no more light is gathered.
+    if depth <= 0 {
+        return Vec3::<f32>::zero();
+    }
+    if world.hit(r, 0.001, f32::MAX, &mut rec) {
+        let target = rec.p + rec.normal + vec3_random_unit();
+        return ray_color(&Ray::new(rec.p, target - rec.p), world, depth - 1) * 0.5;
     } else {
         let unit_direction = r.direction().normalize();
         let t = (unit_direction.y + 1.0) * 0.5;
@@ -41,11 +48,11 @@ fn write_color(tex: &mut TextureKtx2, x: u32, y: u32, pixel_color: &Vec3<f32>, s
     let mut g = pixel_color.y;
     let mut b = pixel_color.z;
 
-    // divide the color by the number of samples
+    // divide the color by the number of samples and gamma-correct for gamma=2.0
     let scale = 1f32 / samples_per_pixel as f32;
-    r *= scale;
-    g *= scale;
-    b *= scale;
+    r = (scale*r).sqrt();
+    g = (scale*g).sqrt();
+    b = (scale*b).sqrt();
 
     // write the translated [0,255] value of each color component
     let ir = (256.0 * clamp(r, 0.0, 0.999)) as u8;
@@ -63,7 +70,7 @@ fn main() {
         Box::new(Sphere::new(Vec3::<f32>::new(0.0,0.0,-1.0), 0.5)),
         Box::new(Sphere::new(Vec3::<f32>::new(0.0,-100.5,-1.0), 100.0)),
     ];
-    let list = HitableList::new(objects);
+    let world = HitableList::new(objects);
 
     let mut rng = rand::thread_rng();
     let die = Uniform::from(0..RAND_MAX);
@@ -77,7 +84,7 @@ fn main() {
                 let u = (i as f32 + die.sample(&mut rng) as f32 / RAND_MAX as f32) / NX as f32;
                 let v = (j as f32 + die.sample(&mut rng) as f32 / RAND_MAX as f32) / NY as f32;
                 let r = camera.get_ray(u, v);
-                pixel_color = pixel_color + ray_color(&r, &list);
+                pixel_color = pixel_color + ray_color(&r, &world, MAX_DEPTH);
             }
             write_color(&mut tex, i, j, &pixel_color, NS);
         }
