@@ -1,6 +1,8 @@
 pub mod ray;
 pub mod sphere;
 pub mod camera;
+pub mod material;
+pub mod hit;
 
 use math::vector::{Vec3, Length, Normalize};
 use rand::distributions::{Distribution, Uniform};

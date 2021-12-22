@@ -7,7 +7,7 @@ use ktx2::vk_format::VkFormat;
 use math::vector::{ Vec3, Normalize };
 
 use rand::distributions::{Distribution, Uniform};
-use raytrace::{ray::*, sphere::{Sphere, HitableList}, camera::Camera, vec3_random_in_unit_sphere, vec3_random_unit};
+use raytrace::{ray::*, sphere::Sphere, camera::Camera, vec3_random_unit, hit::{Hitable, HitRecord, HitableList}};
 
 const NX: u32 = 600;
 const NY: u32 = 400;
@@ -16,13 +16,12 @@ const MAX_DEPTH: i32 = 50;
 const RAND_MAX: u32 = 100000;
 
 fn ray_color(r: &Ray, world: &dyn Hitable, depth: i32) -> Vec3<f32> {
-    let mut rec = HitRecord::default();
-
+    let (is_hit, rec) = world.hit(r, 0.001, f32::MAX);
     // If we've exceeded the ray bounce limit, no more light is gathered.
     if depth <= 0 {
         return Vec3::<f32>::zero();
     }
-    if world.hit(r, 0.001, f32::MAX, &mut rec) {
+    if is_hit {
         let target = rec.p + rec.normal + vec3_random_unit();
         return ray_color(&Ray::new(rec.p, target - rec.p), world, depth - 1) * 0.5;
     } else {
