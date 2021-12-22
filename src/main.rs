@@ -11,9 +11,9 @@ use math::vector::{ Vec3, Normalize };
 use rand::distributions::{Distribution, Uniform};
 use raytrace::{ray::*, sphere::Sphere, camera::Camera, hit::{Hitable, HitableList}, material::{Lambertian, Material, Metal, Dielectric}};
 
-const NX: u32 = 1920;
-const NY: u32 = 1080;
-const NS: u32 = 100;
+const NX: u32 = 200;
+const NY: u32 = 100;
+const NS: u32 = 10;
 const MAX_DEPTH: i32 = 50;
 const RAND_MAX: u32 = 100000;
 
@@ -68,8 +68,15 @@ fn write_color(tex: &mut TextureKtx2, x: u32, y: u32, pixel_color: &Vec3<f32>, s
 fn main() {
     println!("Traycing the rays...");
 
-    let camera = Camera::new(NX as f32 / NY as f32);
+    // Camera
+    let camera = Camera::new(
+        Vec3::<f32>::new(-2.0,2.0,1.0), 
+        Vec3::<f32>::new(0.0,0.0,-1.0), 
+        Vec3::<f32>::new(0.0,1.0,0.0), 
+        20.0, 
+        NX as f32 / NY as f32);
 
+    // World
     let material_ground: Rc<Box<dyn Material>> = Rc::new(Box::new(Lambertian::new(Vec3::<f32>::new(0.8,0.8,0.0))));
     let material_center: Rc<Box<dyn Material>> = Rc::new(Box::new(Lambertian::new(Vec3::<f32>::new(0.1,0.2,0.5))));
     let material_left: Rc<Box<dyn Material>> = Rc::new(Box::new(Dielectric::new(1.5)));
@@ -78,12 +85,13 @@ fn main() {
     let objects: Vec<Box<dyn Hitable>> = vec![
         Box::new(Sphere::new(Vec3::<f32>::new( 0.0,-100.5,-1.0), 100.0, Rc::clone(&material_ground))),
         Box::new(Sphere::new(Vec3::<f32>::new( 0.0,   0.0,-1.0),   0.5, Rc::clone(&material_center))),
-        Box::new(Sphere::new(Vec3::<f32>::new(-1.0,   0.0,-1.0),  -0.4, Rc::clone(&material_left))),
         Box::new(Sphere::new(Vec3::<f32>::new(-1.0,   0.0,-1.0),   0.5, Rc::clone(&material_left))),
+        Box::new(Sphere::new(Vec3::<f32>::new(-1.0,   0.0,-1.0), -0.45, Rc::clone(&material_left))),
         Box::new(Sphere::new(Vec3::<f32>::new( 1.0,   0.0,-1.0),   0.5, Rc::clone(&material_right))),
     ];
     let world = HitableList::new(objects);
 
+    // Render
     let mut rng = rand::thread_rng();
     let die = Uniform::from(0..RAND_MAX);
     
