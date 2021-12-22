@@ -11,12 +11,19 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new() -> Self {
+    pub fn new(aspect_ratio: f32) -> Self {
+        let viewport_height = 2f32;
+        let viewport_width = aspect_ratio * viewport_height;
+        let focal_length = 1f32;
+
+        let origin = Vec3::<f32>::zero();
+        let horizontal = Vec3::<f32>::new(viewport_width,0.0,0.0);
+        let vertical = Vec3::<f32>::new(0.0,viewport_height,0.0);
         Camera {
-            origin: Vec3::<f32>::zero(),
-            lower_left_corner: Vec3::<f32>::new(-2.0,-1.0,-1.0),
-            horizontal: Vec3::<f32>::new(4.0,0.0,0.0),
-            vertical: Vec3::<f32>::new(0.0,2.0,0.0)
+            origin,
+            horizontal,
+            vertical,
+            lower_left_corner: origin - horizontal/2f32 - vertical/2f32 - Vec3::<f32>::new(0.0,0.0,focal_length),
         }
     }
 
