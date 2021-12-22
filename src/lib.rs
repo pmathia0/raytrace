@@ -9,6 +9,12 @@ use rand::distributions::{Distribution, Uniform};
 
 const MAX_RAND: u32 = 100_000;
 
+pub fn random_f32() -> f32 {
+    let mut rng = rand::thread_rng();
+    let die = Uniform::from(0..MAX_RAND);
+    die.sample(&mut rng) as f32 / MAX_RAND as f32
+}
+
 pub fn vec3_random() -> Vec3<f32> {
     let mut rng = rand::thread_rng();
     let die = Uniform::from(0..MAX_RAND);
@@ -39,7 +45,14 @@ pub fn vec3_near_zero(v: &Vec3<f32>) -> bool {
     v.x.abs() < s && v.y.abs() < s && v.z.abs() < s
 }
 
-pub fn reflect(v: &Vec3<f32>, n: &Vec3<f32>) -> Vec3<f32> {
-    let d = v.dot(*n);
-    *v - *n*d*2.0
+pub fn reflect(v: Vec3<f32>, n: Vec3<f32>) -> Vec3<f32> {
+    let d = v.dot(n);
+    v - n*d*2.0
+}
+
+pub fn refract(uv: Vec3<f32>, n: Vec3<f32>, etai_over_etat: f32) -> Vec3<f32> {
+    let cos_theta = f32::min((uv*-1.0).dot(n),1.0);
+    let r_out_perp = (uv + n*cos_theta) * etai_over_etat;
+    let r_out_parallel = n*(-1.0*f32::sqrt(f32::abs(1.0 - r_out_perp.length()*r_out_perp.length() ) ));
+    r_out_perp + r_out_parallel
 }

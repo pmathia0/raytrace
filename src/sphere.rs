@@ -1,7 +1,7 @@
 extern crate math;
 use std::rc::Rc;
 
-use math::vector::Vec3;
+use math::vector::{Vec3, Length};
 
 use crate::{hit::{Hitable, HitRecord}, material::Material};
 
@@ -20,31 +20,29 @@ impl Sphere {
 impl Hitable for Sphere {
     fn hit(&self, r: &crate::ray::Ray, t_min: f32, t_max: f32) -> (bool, HitRecord) {
         let oc = r.origin() - self.center;
-        let a = r.direction().dot(r.direction());
-        let b = oc.dot(r.direction());
-        let c = oc.dot(oc) - self.radius*self.radius;
-        let discriminant = b*b - a*c;
-        let mut hit_record = HitRecord::default();
-        if discriminant > 0.0 {
-            let temp = (-b - discriminant.sqrt()) / a;
-            if temp < t_max && temp > t_min {
-                hit_record.t = temp;
-                hit_record.p = r.point_at_parameter(hit_record.t);
-                let outward_normal = (hit_record.p - self.center) / self.radius;
-                hit_record.set_face_normal(r, outward_normal);
-                hit_record.mat_ptr = Rc::clone(&self.mat_ptr);
-                return (true, hit_record);
-            }
-            let temp = (-b + discriminant.sqrt()) / a;
-            if temp < t_max && temp > t_min {
-                hit_record.t = temp;
-                let outward_normal = (hit_record.p - self.center) / self.radius;
-                hit_record.set_face_normal(r, outward_normal);
-                hit_record.mat_ptr = Rc::clone(&self.mat_ptr);
-                return (true, hit_record);
-            }
+        let a = r.direction().length()*r.direction().length();
+        let half_b = oc.dot(r.direction());
+        let c = oc.length()*oc.length() - self.radius*self.radius;
+
+        let discriminant = half_b*half_b - a*c;
+        if discriminant < 0.0 { return (false, HitRecord::default()) }
+
+        let sqrtd = discriminant.sqrt();
+        let mut root = (-half_b - sqrtd) / a;
+        if root < t_min || t_max < root {
+            root = (-half_b + sqrtd) / a;
+            if root < t_min || t_max < root { return (false, HitRecord::default()) }
         }
-        return (false, hit_record);
+        let mut rec = HitRecord {
+            t: root,
+            p: r.point_at_parameter(root),
+            normal: (r.point_at_parameter(root) - self.center) / self.radius,
+            front_face: true,
+            mat_ptr: Rc::clone(&self.mat_ptr)
+        };
+        let outward_normal = (rec.p - self.center) / self.radius;
+        rec.set_face_normal(r, outward_normal);
+        return (true, rec);
     }
 }
 

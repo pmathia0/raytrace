@@ -9,10 +9,10 @@ use ktx2::vk_format::VkFormat;
 use math::vector::{ Vec3, Normalize };
 
 use rand::distributions::{Distribution, Uniform};
-use raytrace::{ray::*, sphere::Sphere, camera::Camera, hit::{Hitable, HitableList}, material::{Lambertian, Material, Metal}};
+use raytrace::{ray::*, sphere::Sphere, camera::Camera, hit::{Hitable, HitableList}, material::{Lambertian, Material, Metal, Dielectric}};
 
-const NX: u32 = 1800;
-const NY: u32 = 900;
+const NX: u32 = 1920;
+const NY: u32 = 1080;
 const NS: u32 = 100;
 const MAX_DEPTH: i32 = 50;
 const RAND_MAX: u32 = 100000;
@@ -71,13 +71,14 @@ fn main() {
     let camera = Camera::new(NX as f32 / NY as f32);
 
     let material_ground: Rc<Box<dyn Material>> = Rc::new(Box::new(Lambertian::new(Vec3::<f32>::new(0.8,0.8,0.0))));
-    let material_center: Rc<Box<dyn Material>> = Rc::new(Box::new(Lambertian::new(Vec3::<f32>::new(0.7,0.3,0.3))));
-    let material_left: Rc<Box<dyn Material>> = Rc::new(Box::new(Metal::new(Vec3::<f32>::new(0.8,0.8,0.8), 0.3)));
-    let material_right: Rc<Box<dyn Material>> = Rc::new(Box::new(Metal::new(Vec3::<f32>::new(0.8,0.6,0.2), 1.0)));
+    let material_center: Rc<Box<dyn Material>> = Rc::new(Box::new(Lambertian::new(Vec3::<f32>::new(0.1,0.2,0.5))));
+    let material_left: Rc<Box<dyn Material>> = Rc::new(Box::new(Dielectric::new(1.5)));
+    let material_right: Rc<Box<dyn Material>> = Rc::new(Box::new(Metal::new(Vec3::<f32>::new(0.8,0.6,0.2), 0.0)));
 
     let objects: Vec<Box<dyn Hitable>> = vec![
         Box::new(Sphere::new(Vec3::<f32>::new( 0.0,-100.5,-1.0), 100.0, Rc::clone(&material_ground))),
         Box::new(Sphere::new(Vec3::<f32>::new( 0.0,   0.0,-1.0),   0.5, Rc::clone(&material_center))),
+        Box::new(Sphere::new(Vec3::<f32>::new(-1.0,   0.0,-1.0),  -0.4, Rc::clone(&material_left))),
         Box::new(Sphere::new(Vec3::<f32>::new(-1.0,   0.0,-1.0),   0.5, Rc::clone(&material_left))),
         Box::new(Sphere::new(Vec3::<f32>::new( 1.0,   0.0,-1.0),   0.5, Rc::clone(&material_right))),
     ];
@@ -88,8 +89,8 @@ fn main() {
     
     let mut tex: TextureKtx2 = TextureKtx2::new(NX, NY, VkFormat::R8G8B8A8_UNORM);
     for j in 0..NY {
+        println!("Processing row {}", j);
         for i in 0..NX {
-            println!("Processing row {}", j);
             let mut pixel_color = Vec3::<f32>::zero();
             for _s in 0..NS {
                 let u = (i as f32 + die.sample(&mut rng) as f32 / RAND_MAX as f32) / NX as f32;
