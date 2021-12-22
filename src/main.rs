@@ -9,7 +9,7 @@ use ktx2::vk_format::VkFormat;
 use math::vector::{ Vec3, Normalize };
 
 use rand::distributions::{Distribution, Uniform};
-use raytrace::{ray::*, sphere::Sphere, camera::Camera, vec3_random_unit, hit::{Hitable, HitRecord, HitableList}, material::{Lambertian, Material, Metal}};
+use raytrace::{ray::*, sphere::Sphere, camera::Camera, hit::{Hitable, HitableList}, material::{Lambertian, Material, Metal}};
 
 const NX: u32 = 1800;
 const NY: u32 = 900;
@@ -72,8 +72,8 @@ fn main() {
 
     let material_ground: Rc<Box<dyn Material>> = Rc::new(Box::new(Lambertian::new(Vec3::<f32>::new(0.8,0.8,0.0))));
     let material_center: Rc<Box<dyn Material>> = Rc::new(Box::new(Lambertian::new(Vec3::<f32>::new(0.7,0.3,0.3))));
-    let material_left: Rc<Box<dyn Material>> = Rc::new(Box::new(Metal::new(Vec3::<f32>::new(0.8,0.8,0.8))));
-    let material_right: Rc<Box<dyn Material>> = Rc::new(Box::new(Metal::new(Vec3::<f32>::new(0.8,0.6,0.2))));
+    let material_left: Rc<Box<dyn Material>> = Rc::new(Box::new(Metal::new(Vec3::<f32>::new(0.8,0.8,0.8), 0.3)));
+    let material_right: Rc<Box<dyn Material>> = Rc::new(Box::new(Metal::new(Vec3::<f32>::new(0.8,0.6,0.2), 1.0)));
 
     let objects: Vec<Box<dyn Hitable>> = vec![
         Box::new(Sphere::new(Vec3::<f32>::new( 0.0,-100.5,-1.0), 100.0, Rc::clone(&material_ground))),

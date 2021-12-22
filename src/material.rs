@@ -2,7 +2,7 @@ extern crate math;
 
 use math::vector::{Vec3, Normalize};
 
-use crate::{ray::Ray, hit::HitRecord, vec3_random_unit, vec3_near_zero, reflect};
+use crate::{ray::Ray, hit::HitRecord, vec3_random_unit, vec3_near_zero, reflect, vec3_random_in_unit_sphere};
 
 
 pub trait Material {
@@ -36,13 +36,15 @@ impl Material for Lambertian {
 }
 
 pub struct Metal {
-    pub albedo: Vec3<f32>
+    pub albedo: Vec3<f32>,
+    pub fuzz: f32
 }
 
 impl Metal {
-    pub fn new(albedo: Vec3<f32>) -> Self {
+    pub fn new(albedo: Vec3<f32>, f: f32) -> Self {
         Metal {
-            albedo
+            albedo,
+            fuzz: if f < 1.0 {f} else {1.0}
         }
     }
 }
@@ -50,7 +52,7 @@ impl Metal {
 impl Material for Metal {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord, attenuation: &mut Vec3<f32>) -> (bool, Ray) {
         let reflected = reflect(&r_in.direction().normalize(), &rec.normal);
-        let scattered = Ray::new(rec.p, reflected);
+        let scattered = Ray::new(rec.p, reflected + vec3_random_in_unit_sphere() * self.fuzz);
         *attenuation = self.albedo;
         (scattered.direction().dot(rec.normal) > 0.0, scattered)
     }
