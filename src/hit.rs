@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use math::vector::Vec3;
 
-use crate::{ray::Ray, material::Material};
+use crate::{ray::Ray, material::{Material, Lambertian}};
 
 pub trait Hitable {
     fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> (bool, HitRecord);
@@ -11,7 +11,7 @@ pub trait Hitable {
 pub struct HitRecord {
     pub p: Vec3<f32>,
     pub normal: Vec3<f32>,
-    pub mat_ptr: Option<Rc<Box<dyn Material>>>,
+    pub mat_ptr: Rc<Box<dyn Material>>,
     pub t: f32,
     pub front_face: bool
 }
@@ -34,7 +34,7 @@ impl Default for HitRecord {
             p: Vec3::<f32>::zero(),
             normal: Vec3::<f32>::zero(),
             front_face: false,
-            mat_ptr: None
+            mat_ptr: Rc::new(Box::new(Lambertian::new(Vec3::<f32>::zero())))
         }
     }
 }

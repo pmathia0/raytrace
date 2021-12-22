@@ -33,3 +33,13 @@ pub fn vec3_random_unit() -> Vec3<f32> {
     let v = vec3_random_in_unit_sphere().normalize();
     v
 }
+
+pub fn vec3_near_zero(v: &Vec3<f32>) -> bool {
+    let s: f32 = 1e-8;
+    v.x.abs() < s && v.y.abs() < s && v.z.abs() < s
+}
+
+pub fn reflect(v: &Vec3<f32>, n: &Vec3<f32>) -> Vec3<f32> {
+    let d = v.dot(*n);
+    *v - *n*d*2.0
+}

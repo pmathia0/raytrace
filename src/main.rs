@@ -2,15 +2,17 @@ extern crate math;
 extern crate rand;
 extern crate ktx2;
 
+use std::rc::Rc;
+
 use ktx2::texture::TextureKtx2;
 use ktx2::vk_format::VkFormat;
 use math::vector::{ Vec3, Normalize };
 
 use rand::distributions::{Distribution, Uniform};
-use raytrace::{ray::*, sphere::Sphere, camera::Camera, vec3_random_unit, hit::{Hitable, HitRecord, HitableList}};
+use raytrace::{ray::*, sphere::Sphere, camera::Camera, vec3_random_unit, hit::{Hitable, HitRecord, HitableList}, material::{Lambertian, Material, Metal}};
 
-const NX: u32 = 600;
-const NY: u32 = 400;
+const NX: u32 = 1800;
+const NY: u32 = 900;
 const NS: u32 = 100;
 const MAX_DEPTH: i32 = 50;
 const RAND_MAX: u32 = 100000;
@@ -22,13 +24,16 @@ fn ray_color(r: &Ray, world: &dyn Hitable, depth: i32) -> Vec3<f32> {
         return Vec3::<f32>::zero();
     }
     if is_hit {
-        let target = rec.p + rec.normal + vec3_random_unit();
-        return ray_color(&Ray::new(rec.p, target - rec.p), world, depth - 1) * 0.5;
-    } else {
-        let unit_direction = r.direction().normalize();
-        let t = (unit_direction.y + 1.0) * 0.5;
-        return Vec3::<f32>::new(1.0,1.0,1.0)*(1.0-t) + Vec3::<f32>::new(0.5,0.7,1.0)*t;
+        let mut attenuation = Vec3::<f32>::zero();
+        let (is_sc, scattered) = rec.mat_ptr.scatter(r, &rec, &mut attenuation);
+        if is_sc {
+            return attenuation * ray_color(&scattered, world, depth-1);
+        }
+        return Vec3::<f32>::zero();
     }
+    let unit_direction = r.direction().normalize();
+    let t = (unit_direction.y + 1.0) * 0.5;
+    return Vec3::<f32>::new(1.0,1.0,1.0)*(1.0-t) + Vec3::<f32>::new(0.5,0.7,1.0)*t;
 }
 
 #[inline(always)]
@@ -65,9 +70,16 @@ fn main() {
 
     let camera = Camera::new(NX as f32 / NY as f32);
 
+    let material_ground: Rc<Box<dyn Material>> = Rc::new(Box::new(Lambertian::new(Vec3::<f32>::new(0.8,0.8,0.0))));
+    let material_center: Rc<Box<dyn Material>> = Rc::new(Box::new(Lambertian::new(Vec3::<f32>::new(0.7,0.3,0.3))));
+    let material_left: Rc<Box<dyn Material>> = Rc::new(Box::new(Metal::new(Vec3::<f32>::new(0.8,0.8,0.8))));
+    let material_right: Rc<Box<dyn Material>> = Rc::new(Box::new(Metal::new(Vec3::<f32>::new(0.8,0.6,0.2))));
+
     let objects: Vec<Box<dyn Hitable>> = vec![
-        Box::new(Sphere::new(Vec3::<f32>::new(0.0,0.0,-1.0), 0.5)),
-        Box::new(Sphere::new(Vec3::<f32>::new(0.0,-100.5,-1.0), 100.0)),
+        Box::new(Sphere::new(Vec3::<f32>::new( 0.0,-100.5,-1.0), 100.0, Rc::clone(&material_ground))),
+        Box::new(Sphere::new(Vec3::<f32>::new( 0.0,   0.0,-1.0),   0.5, Rc::clone(&material_center))),
+        Box::new(Sphere::new(Vec3::<f32>::new(-1.0,   0.0,-1.0),   0.5, Rc::clone(&material_left))),
+        Box::new(Sphere::new(Vec3::<f32>::new( 1.0,   0.0,-1.0),   0.5, Rc::clone(&material_right))),
     ];
     let world = HitableList::new(objects);
 
