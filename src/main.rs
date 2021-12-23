@@ -9,11 +9,11 @@ use ktx2::vk_format::VkFormat;
 use math::vector::{ Vec3, Normalize, Length };
 
 use rand::distributions::{Distribution, Uniform};
-use raytrace::{ray::*, sphere::Sphere, camera::Camera, hit::{Hitable, HitableList}, material::{Lambertian, Material, Metal, Dielectric}};
+use raytrace::{ray::*, sphere::Sphere, camera::Camera, hit::{Hitable, HitableList}, material::{Lambertian, Material, Metal, Dielectric}, random_f32, vec3_random_with_range, random_f32_with_range};
 
-const NX: u32 = 800;
-const NY: u32 = 400;
-const NS: u32 = 200;
+const NX: u32 = 1200;
+const NY: u32 =  800;
+const NS: u32 = 50;
 const MAX_DEPTH: i32 = 50;
 const RAND_MAX: u32 = 100000;
 
@@ -69,30 +69,55 @@ fn main() {
     println!("Traycing the rays...");
 
     // Camera
-    let lookfrom = Vec3::<f32>::new(3.0,3.0,2.0); 
-    let lookat = Vec3::<f32>::new(0.0,0.0,-1.0);
+    let lookfrom = Vec3::<f32>::new(13.0,2.0,3.0); 
+    let lookat = Vec3::<f32>::new(0.0,0.0,0.0);
     let camera = Camera::new(
         lookfrom, 
         lookat,
         Vec3::<f32>::new(0.0,1.0,0.0), 
         20.0, 
         NX as f32 / NY as f32,
-        2.0,
-        (lookfrom-lookat).length());
+        0.1,
+        10.0);
 
     // World
-    let material_ground: Rc<Box<dyn Material>> = Rc::new(Box::new(Lambertian::new(Vec3::<f32>::new(0.8,0.8,0.0))));
-    let material_center: Rc<Box<dyn Material>> = Rc::new(Box::new(Lambertian::new(Vec3::<f32>::new(0.1,0.2,0.5))));
-    let material_left: Rc<Box<dyn Material>> = Rc::new(Box::new(Dielectric::new(1.5)));
-    let material_right: Rc<Box<dyn Material>> = Rc::new(Box::new(Metal::new(Vec3::<f32>::new(0.8,0.6,0.2), 0.0)));
+    let material_ground: Rc<Box<dyn Material>> = Rc::new(Box::new(Lambertian::new(Vec3::<f32>::new(0.5,0.5,0.5))));
 
-    let objects: Vec<Box<dyn Hitable>> = vec![
-        Box::new(Sphere::new(Vec3::<f32>::new( 0.0,-100.5,-1.0), 100.0, Rc::clone(&material_ground))),
-        Box::new(Sphere::new(Vec3::<f32>::new( 0.0,   0.0,-1.0),   0.5, Rc::clone(&material_center))),
-        Box::new(Sphere::new(Vec3::<f32>::new(-1.0,   0.0,-1.0),   0.5, Rc::clone(&material_left))),
-        Box::new(Sphere::new(Vec3::<f32>::new(-1.0,   0.0,-1.0), -0.45, Rc::clone(&material_left))),
-        Box::new(Sphere::new(Vec3::<f32>::new( 1.0,   0.0,-1.0),   0.5, Rc::clone(&material_right))),
-    ];
+    let mut objects: Vec<Box<dyn Hitable>> = Vec::new();
+    objects.push(Box::new(Sphere::new(Vec3::<f32>::new( 0.0,-1000.0,0.0), 1000.0, Rc::clone(&material_ground))));
+
+    for a in -11..11 {
+        for b in -11..11 {
+            let choose_mat = random_f32();
+            let center = Vec3::<f32>::new(random_f32()*0.9 + a as f32, 0.2, random_f32()*0.9 + b as f32);
+
+            if (center - Vec3::<f32>::new(4.0,0.2,0.0)).length() > 0.9 {
+                let material: Box<dyn Material> =
+                if choose_mat < 0.8 {
+                    // diffuse
+                    let albedo = vec3_random_with_range(0.0, 1.0)*vec3_random_with_range(0.0, 1.0);
+                    Box::new(Lambertian::new(albedo))
+                } else if choose_mat < 0.95 {
+                    // metal
+                    let albedo = vec3_random_with_range(0.5, 1.0);
+                    let fuzz = random_f32_with_range(0.0, 0.5);
+                    Box::new(Metal::new(albedo, fuzz))
+                } else {
+                    // glass
+                    Box::new(Dielectric::new(1.5))
+                };
+                let sphere = Box::new(Sphere::new(center, 0.2, Rc::new(material)));
+                objects.push(sphere);
+            }
+        }
+    }
+    let material1 = Box::new(Dielectric::new(1.5));
+    objects.push(Box::new(Sphere::new(Vec3::<f32>::new(0.0,1.0,0.0), 1.0, Rc::new(material1))));
+    let material2 = Box::new(Lambertian::new(Vec3::<f32>::new(0.4,0.2,0.1)));
+    objects.push(Box::new(Sphere::new(Vec3::<f32>::new(-4.0,1.0,0.0), 1.0, Rc::new(material2))));
+    let material3 = Box::new(Metal::new(Vec3::<f32>::new(0.7,0.6,0.5), 0.0));
+    objects.push(Box::new(Sphere::new(Vec3::<f32>::new(4.0,1.0,0.0), 1.0, Rc::new(material3))));
+
     let world = HitableList::new(objects);
 
     // Render
